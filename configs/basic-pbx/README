@@ -1,0 +1,15 @@
+The included GABpbx configuration files are intended to be an example
+implementation for a fictitious company, Super Awesome Company.
+
+It can serve as a handy reference for understanding a simple GABpbx
+configuration in an approximate real-world environment.
+
+If you intend to use this configuration as a template for your own, then
+you will need to change many values in the various configuration files to
+match your own devices, network, SIP ITSP accounts and more.
+
+For further documentation on this configuration see the GABpbx documentation:
+https://docs.gabpbx.org/Deployment/Reference-Use-Cases-for-GABpbx/.
+
+Please report bugs or errors in configuration on the GABpbx issue tracker:
+https://docs.gabpbx.org/GABpbx-Community/GABpbx-Issue-Guidelines/

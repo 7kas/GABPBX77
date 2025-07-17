@@ -1,0 +1,357 @@
+; sofia.conf - Sofia-SIP Channel Driver Configuration
+;
+; This configuration file supports:
+; - Multiple registrations per user
+; - SIP OPTIONS monitoring
+; - Text messaging (SIP MESSAGE)
+; - IP-based trunk connections
+; - Presence control (BLF)
+
+;========================================
+; Global Settings
+;========================================
+[general]
+; Enable the module
+enabled=yes
+
+; Debug level (0=off, 9=maximum)
+debug=1
+
+; Default context for incoming calls
+context=public
+
+; Global codecs (can be overridden per profile/endpoint)
+allow=ulaw,alaw,g729,g722,opus
+
+; DTMF mode (rfc2833, info, inband)
+dtmfmode=rfc2833
+
+; User agent string
+useragent=GABpbx
+
+; Database backend for persistent registrations
+; Options: astdb (default), sqlite, odbc
+;dbbackend=astdb
+
+;========================================
+; Profile Configuration
+;========================================
+; Profiles are like separate SIP servers
+; Each can bind to different IP:port
+
+[internal]
+type=profile
+enabled=yes
+
+; Network Settings
+bindip=0.0.0.0
+bindport=5060
+
+; External IP for NAT (optional)
+;externalip=1.2.3.4
+; Or use STUN
+;stunserver=stun.example.com:3478
+
+; SIP domain for this profile
+sipdomain=pbx.local
+
+; Default context for calls
+context=internal
+
+; Authentication
+auth_calls=yes
+auth_registrations=yes
+accept_blind_reg=no
+
+; Registration settings
+max_registrations=100          ; Total registrations for profile
+max_registrations_per_user=10  ; Per user limit
+registration_timeout=3600
+min_registration_expires=60
+max_registration_expires=7200
+
+; OPTIONS ping support
+enable_options=yes
+options_frequency=30           ; How often to send OPTIONS (seconds)
+options_timeout=10             ; Timeout for OPTIONS response
+
+; MESSAGE support
+enable_messaging=yes
+accept_messages=yes
+auth_messages=yes
+
+; Presence/BLF support
+enable_presence=yes
+presence_expire=3600
+
+; Media Settings
+rtp_ip=0.0.0.0
+rtp_port_start=10000
+rtp_port_end=20000
+
+; Codec preferences (overrides general)
+allow=ulaw,alaw,g722,opus
+disallow=all
+
+; NAT settings
+nat=auto_force_rport,auto_comedia
+
+; Timers
+session_timeout=1800
+rtp_timeout=300
+
+; Security
+;tlsenable=yes
+;tlscertfile=/etc/gabpbx/certs/cert.pem
+;tlsprivatekey=/etc/gabpbx/certs/key.pem
+
+;========================================
+; External profile for trunks
+;========================================
+[external]
+type=profile
+enabled=yes
+bindip=0.0.0.0
+bindport=5080
+context=from-external
+auth_calls=no
+auth_registrations=no
+enable_options=yes
+enable_messaging=yes
+
+;========================================
+; User Endpoints
+;========================================
+; Support multiple registrations and features
+
+[1001]
+type=endpoint
+profile=internal
+
+; Authentication
+username=1001
+secret=password123
+; Or use MD5 secret
+;md5secret=0123456789abcdef0123456789abcdef
+
+; Identity
+callerid="John Doe" <1001>
+mailbox=1001@default
+
+; Context (overrides profile)
+context=users
+
+; Multiple registration support
+max_registrations=5    ; Allow up to 5 simultaneous registrations
+; This allows the same user to register from multiple devices
+
+; Codecs (overrides profile)
+allow=ulaw,g722,opus
+disallow=all
+
+; Call features
+callgroup=1
+pickupgroup=1
+call-limit=10         ; Max simultaneous calls
+busy_level=8          ; Consider busy at 8 calls
+
+; DTMF
+dtmfmode=rfc2833
+
+; OPTIONS monitoring
+qualify=yes           ; Send OPTIONS to monitor
+qualifyfreq=60       ; How often to send OPTIONS
+
+; Presence/BLF
+allowsubscribe=yes    ; Allow SUBSCRIBE for presence
+allowpresence=yes     ; Send presence updates
+sendrpid=yes         ; Send Remote-Party-ID
+trustrpid=yes        ; Trust Remote-Party-ID
+
+; Messaging
+accept_messages=yes   ; Accept SIP MESSAGE
+send_messages=yes     ; Can send SIP MESSAGE
+
+; Custom variables
+setvar=CUSTID=12345
+setvar=LANGUAGE=en
+
+;----------------------------------------
+[1002]
+type=endpoint
+profile=internal
+username=1002
+secret=password456
+callerid="Jane Smith" <1002>
+max_registrations=3
+qualify=yes
+allowsubscribe=yes
+accept_messages=yes
+
+;----------------------------------------
+; Template example for multiple users
+;----------------------------------------
+[user-template](!)
+type=endpoint
+profile=internal
+context=users
+max_registrations=3
+qualify=yes
+qualifyfreq=60
+dtmfmode=rfc2833
+allow=ulaw,alaw,g722
+allowsubscribe=yes
+allowpresence=yes
+accept_messages=yes
+send_messages=yes
+
+; Use template
+[1003](user-template)
+username=1003
+secret=password789
+callerid="Bob Wilson" <1003>
+
+[1004](user-template)
+username=1004
+secret=password012
+callerid="Alice Brown" <1004>
+max_registrations=10   ; Override template
+
+;========================================
+; IP-Based Trunk Configuration
+;========================================
+; For carriers and PBX interconnection
+
+[trunk-carrier1]
+type=trunk
+profile=external
+
+; Remote host settings
+host=sip.carrier.com
+port=5060
+
+; Authentication (if required)
+username=myaccount
+secret=mypassword
+realm=sip.carrier.com
+
+; From header
+fromdomain=sip.carrier.com
+fromuser=myaccount
+
+; Context for inbound calls
+context=from-carrier1
+
+; Codecs
+allow=ulaw,alaw
+disallow=all
+
+; OPTIONS monitoring
+monitor=yes                ; Monitor trunk with OPTIONS
+monitor_frequency=30       ; Check every 30 seconds
+monitor_timeout=10         ; Timeout after 10 seconds
+
+; IP ACL (optional)
+;permit=192.168.1.0/255.255.255.0
+;permit=10.0.0.0/255.0.0.0
+;deny=0.0.0.0/0.0.0.0
+
+;----------------------------------------
+[trunk-pbx2]
+type=trunk
+profile=external
+
+; Direct IP connection (no authentication)
+host=192.168.1.100
+port=5060
+insecure=port,invite
+
+; No registration needed for IP trunk
+;register=no
+
+context=from-pbx2
+
+; High quality codecs for internal PBX
+allow=g722,ulaw,alaw
+disallow=all
+
+; Monitor with OPTIONS
+monitor=yes
+monitor_frequency=10
+
+;========================================
+; Outbound Registration (for trunks)
+;========================================
+[gateway-provider1]
+type=gateway
+profile=external
+
+; Provider settings
+gateway=sip.provider.com
+proxy=sip.provider.com
+realm=sip.provider.com
+
+; Authentication
+username=myaccount
+password=mypassword
+
+; Registration
+register=yes
+expire_seconds=3600
+
+; From user/domain
+from_user=myaccount
+from_domain=sip.provider.com
+
+; Caller ID
+callerid=+1234567890
+
+; Codecs
+allow=ulaw,alaw
+
+; Routing
+extension=+1234567890
+context=from-provider
+
+; Monitor registration
+ping=yes
+ping_freq=60
+
+;========================================
+; Access Control Lists
+;========================================
+[acl-internal]
+type=acl
+profile=internal
+; Allow these networks
+permit=192.168.0.0/255.255.0.0
+permit=10.0.0.0/255.0.0.0
+permit=172.16.0.0/255.240.0.0
+; Deny everything else
+deny=0.0.0.0/0.0.0.0
+
+[acl-external]
+type=acl
+profile=external
+; Be more restrictive on external
+permit=1.2.3.4/255.255.255.255  ; Specific carrier IP
+deny=0.0.0.0/0.0.0.0
+
+;========================================
+; Presence Lists (for BLF)
+;========================================
+[presence-list]
+type=presence_list
+name=reception
+; Extensions to monitor
+list=1001,1002,1003,1004
+
+;========================================
+; Message Routing
+;========================================
+[message-route]
+type=message_route
+; Route messages to these contexts
+route=internal-msg,external-msg
+; Default expiry for offline messages
+offline_expiry=86400  ; 24 hours

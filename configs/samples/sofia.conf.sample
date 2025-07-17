@@ -1,0 +1,705 @@
+; sofia.conf - Sofia-SIP Channel Driver Configuration for GABpbx
+; 
+; This file configures the Sofia-SIP channel driver (chan_sofia) which provides
+; SIP protocol support for GABpbx. It replaces the deprecated chan_sip driver.
+;
+; The configuration is divided into sections:
+; - [general] - Global settings that apply to all profiles
+; - [profile-name] - Profile definitions (listeners)
+; - [endpoint-name] - Endpoint/peer definitions
+;
+; Reload Command: 'module reload chan_sofia.so' or 'sofia reload'
+
+; ============================================================================
+; GENERAL SECTION - Global Settings
+; ============================================================================
+[general]
+; Enable/disable the channel driver globally
+; Values: yes|no (default: yes)
+;enabled=yes
+
+; Enable debug output for Sofia-SIP operations
+; Values: yes|no (default: no)
+;debug=no
+
+; Maximum number of simultaneous registrations per endpoint
+; This is the default value used when not specified per endpoint
+; Range: 1-100 (default: 3)
+;max_contacts=3
+
+; Ring all registered devices except those already in use
+; Values: yes|no (default: no)
+;ring_all_except_inuse=no
+
+; Enable IP blacklist functionality for security
+; When enabled, IPs with multiple failed auth attempts are temporarily blocked
+; Values: yes|no (default: yes)
+;blacklist_enabled=yes
+
+; Number of failed attempts before an IP is blacklisted
+; Range: 1-100 (default: 5)
+;blacklist_max_failures=5
+
+; Time in seconds an IP remains blacklisted
+; Range: 60-86400 (default: 3600 = 1 hour)
+;blacklist_duration=3600
+
+; Enable authentication cache (RFC3261 compliant)
+; Caches successful authentications to reduce auth overhead
+; Values: yes|no (default: yes)
+;auth_cache_enabled=yes
+
+; Authentication cache time-to-live in seconds
+; How long a successful auth is cached
+; Range: 60-3600 (default: 300 = 5 minutes)
+;auth_cache_ttl=300
+
+; Nonce time-to-live in seconds (for digest authentication)
+; Time window for nonce reuse
+; Range: 30-300 (default: 120 = 2 minutes)
+;nonce_ttl=120
+
+; Enable session timers (RFC 4028)
+; Periodic re-INVITEs to detect dead sessions
+; Values: yes|no (default: yes)
+;session_timers=yes
+
+; Session timer mode
+; Values: accept|originate|refuse (default: accept)
+; - accept: Use timers when requested by peer
+; - originate: Always request timers
+; - refuse: Never use timers
+;session_timers_mode=accept
+
+; Minimum session expiration time in seconds (RFC 4028)
+; Range: 90-86400 (default: 1800 = 30 minutes)
+;session_min_se=1800
+
+; Default session expiration time in seconds
+; Range: 1800-86400 (default: 3600 = 1 hour)
+;session_default_se=3600
+
+; Maximum size of the event queue
+; Events are queued for processing by worker threads
+; Range: 100-10000 (default: 1000)
+;event_queue_size=1000
+
+; Number of worker threads for event processing
+; Values: 0 (auto), 1-64 (default: 0)
+; 0 = auto-detect (CPU cores / 2 + 1)
+;event_queue_workers=0
+
+; Default codec preferences (comma-separated list)
+; Common codecs: ulaw, alaw, gsm, g729, g722, opus, speex
+; Example: "alaw,ulaw,gsm"
+;default_codecs=alaw,ulaw
+
+; Enable T.38 fax support
+; Values: yes|no (default: no)
+;t38_enabled=no
+
+; RTP port range (must match rtp.conf settings)
+; Format: start-end
+;rtp_port_range=10000-20000
+
+; DTMF mode
+; Values: rfc2833|info|inband (default: rfc2833)
+;dtmf_mode=rfc2833
+
+; User-Agent header string
+; Variables: ${VERSION} = GABpbx version
+;user_agent=GABpbx/${VERSION}
+
+; Enable presence support (SUBSCRIBE/NOTIFY)
+; Values: yes|no (default: yes)
+;enable_presence=yes
+
+; Enable messaging support (MESSAGE method)
+; Values: yes|no (default: yes)
+;enable_messaging=yes
+
+; Enable OPTIONS keepalive for registered endpoints
+; Values: yes|no (default: yes)
+;enable_options_keepalive=yes
+
+; OPTIONS keepalive interval in seconds
+; Range: 30-3600 (default: 60)
+;options_keepalive_interval=60
+
+; ============================================================================
+; PROFILE SECTIONS - SIP Listeners
+; ============================================================================
+; Profiles define listening sockets and their behavior
+; You can have multiple profiles listening on different IPs/ports
+
+; Example internal profile for local network
+[internal]
+; Profile type (always 'profile' for listener definitions)
+type=profile
+
+; Enable this profile
+; Values: yes|no (default: yes)
+enabled=yes
+
+; IP address to bind to
+; Use 0.0.0.0 to bind to all interfaces
+; Use specific IP for multi-homed systems
+bindip=10.200.0.4
+
+; Port to listen on
+; Standard SIP port is 5060, but 6000 is used here to avoid conflicts
+bindport=6000
+
+; Transport protocols to use
+; Valid values and combinations:
+;   - UDP         (UDP only)
+;   - TCP         (TCP only)
+;   - TLS         (TLS only - requires certificates)
+;   - UDP,TCP     (Both UDP and TCP)
+;   - UDP,TLS     (Both UDP and TLS)
+; Invalid combinations:
+;   - TCP,TLS     (NOT allowed - TCP and TLS cannot be combined)
+; Default: UDP,TCP
+; Note: TLS requires certificate configuration (see TLS settings below)
+transport_protocol=UDP,TCP
+
+; Default context for calls from this profile
+; Must match a context in extensions.conf
+context=internal
+
+; Authentication settings
+; Authentication is now configured per endpoint, not per profile
+; See endpoint examples below for auth_type configuration
+
+; NAT handling
+; Enable NAT detection and handling
+; Values: yes|no (default: yes)
+nat=yes
+
+; External IP for NAT (if behind NAT)
+; This IP is used in Contact headers for external communication
+;externip=1.2.3.4
+
+; External hostname (alternative to externip)
+; Useful for dynamic IPs with DDNS
+;externhost=sip.example.com
+
+; External host refresh interval in seconds
+; How often to resolve externhost
+; Range: 60-3600 (default: 120)
+;externrefresh=120
+
+; Local networks (no NAT handling applied)
+; Can specify multiple entries
+localnet=192.168.0.0/255.255.0.0
+localnet=10.0.0.0/255.0.0.0
+localnet=172.16.0.0/255.240.0.0
+
+; Force rport for NAT traversal
+; Values: yes|no (default: yes)
+;force_rport=yes
+
+; Enable symmetric RTP
+; Values: yes|no (default: yes)
+;symmetric_rtp=yes
+
+; Registration settings
+; Minimum registration expiry in seconds
+; Range: 60-3600 (default: 60)
+;register_min_expiry=60
+
+; Maximum registration expiry in seconds
+; Range: 3600-86400 (default: 3600)
+;register_max_expiry=3600
+
+; Default registration expiry in seconds
+; Range: 60-3600 (default: 3600)
+;register_default_expiry=3600
+
+; Enable Path header support (RFC 3327)
+; Useful for registrations through proxies
+; Values: yes|no (default: no)
+;enable_path=no
+
+; Subscription settings
+; Minimum subscription expiry in seconds
+; Range: 60-3600 (default: 60)
+;subscribe_min_expiry=60
+
+; Maximum subscription expiry in seconds
+; Range: 3600-86400 (default: 3600)
+;subscribe_max_expiry=3600
+
+; Presence settings
+; Publish minimum expiry in seconds
+; Range: 60-3600 (default: 60)
+;publish_min_expiry=60
+
+; Publish maximum expiry in seconds
+; Range: 3600-86400 (default: 3600)
+;publish_max_expiry=3600
+
+; Media settings
+; Direct media (RTP flows directly between endpoints)
+; Values: yes|no (default: no)
+;direct_media=no
+
+; Direct media Access Control List
+; ACL name from acl.conf to determine which peers can do direct media
+;direct_media_acl=internal_nets
+
+; Enable music on hold
+; Values: yes|no (default: yes)
+;moh_enabled=yes
+
+; Music on hold class
+;moh_class=default
+
+; REFER handling
+; Allow REFER (call transfer) requests
+; Values: yes|no (default: yes)
+;allow_refer=yes
+
+; Notify REFER progress
+; Values: yes|no (default: yes)
+;refer_notify=yes
+
+; Trust Referred-By header
+; Values: yes|no (default: no)
+;trust_referred_by=no
+
+; Timer settings
+; Timer B (INVITE transaction timeout) in milliseconds
+; Range: 16000-64000 (default: 32000)
+;timer_b=32000
+
+; Timer T1 (RTT estimate) in milliseconds
+; Range: 100-1000 (default: 500)
+;timer_t1=500
+
+; Timer T2 (max retransmit interval) in milliseconds
+; Range: 2000-8000 (default: 4000)
+;timer_t2=4000
+
+; Timer T4 (max duration for message to stay in network) in milliseconds
+; Range: 2500-10000 (default: 5000)
+;timer_t4=5000
+
+; Security settings
+; Enable blacklist for this profile
+; Values: yes|no (default: follows general setting)
+;blacklist_enabled=yes
+
+; Allowed User-Agent patterns for this profile
+; Comma-separated list of patterns (max 3)
+; Use USERAGENT as placeholder to capture on first registration
+;allowed_useragents=Asterisk,Zoiper,USERAGENT
+
+; TLS settings (only used when transport_protocol includes TLS)
+; TLS bind IP (defaults to bindip)
+;tls_bindip=10.200.0.4
+
+; TLS bind port (only needed if different from bindport)
+; Note: UDP and TLS can share the same port number since UDP uses UDP protocol
+; and TLS uses TCP protocol - no conflict between them
+;tls_bindport=6001
+
+; TLS certificate file
+;tls_cert_file=/etc/gabpbx/keys/server.pem
+
+; TLS private key file
+;tls_key_file=/etc/gabpbx/keys/server.key
+
+; TLS CA certificate file
+;tls_ca_file=/etc/gabpbx/keys/ca.pem
+
+; TLS verify mode
+; Values: none|peer|fail_if_no_peer_cert (default: none)
+;tls_verify=none
+
+; TLS cipher list (OpenSSL format)
+;tls_ciphers=DEFAULT
+
+; TLS method
+; Values: tlsv1, tlsv1_1, tlsv1_2, tlsv1_3 (default: tlsv1_2)
+;tls_method=tlsv1_2
+
+; Miscellaneous settings
+; Enable compact SIP headers
+; Values: yes|no (default: no)
+;compact_headers=no
+
+; Enable SIP debugging for this profile
+; Values: yes|no (default: no)
+;sip_debug=no
+
+; Realm for digest authentication
+; Defaults to profile name
+;realm=internal
+
+; Database settings (for persistent storage)
+; Database name for this profile (used for persistent registrations)
+;db_name=sofia_reg_internal
+
+; Example public profile for external connections
+[public]
+type=profile
+enabled=yes
+bindip=213.162.195.170
+bindport=6000
+transport_protocol=UDP,TCP
+context=public
+; auth_calls removed - use auth_registrations instead
+auth_registrations=yes
+nat=yes
+; External IP is same as bind IP for public interface
+externip=213.162.195.170
+; No local networks for public profile
+; More restrictive settings for public profile
+register_min_expiry=300
+register_default_expiry=1800
+register_max_expiry=3600
+; Enable blacklist for security
+blacklist_enabled=yes
+blacklist_max_failures=3
+; Restrict User-Agents if needed
+;allowed_useragents=Asterisk,Zoiper
+
+; Example disabled profile
+[localhost]
+type=profile
+enabled=no
+bindip=127.0.0.1
+bindport=6000
+transport_protocol=UDP
+context=default
+
+; Example TLS-only profile
+[secure]
+type=profile
+enabled=no
+bindip=0.0.0.0
+bindport=6001
+transport_protocol=TLS
+context=default
+; TLS certificate configuration
+tls_cert_file=/etc/gabpbx/keys/server.pem
+tls_key_file=/etc/gabpbx/keys/server.key
+tls_ca_file=/etc/gabpbx/keys/ca.pem
+tls_verify=none
+; Security settings
+blacklist_enabled=yes
+max_contacts=1
+
+; Example UDP+TLS profile (mixed secure)
+[mixed-secure]
+type=profile
+enabled=no
+bindip=0.0.0.0
+bindport=6002
+transport_protocol=UDP,TLS
+; UDP and TLS can share the same port (no conflict - UDP vs TCP)
+context=default
+; TLS configuration
+tls_cert_file=/etc/gabpbx/keys/server.pem
+tls_key_file=/etc/gabpbx/keys/server.key
+
+; ============================================================================
+; ENDPOINT SECTIONS - SIP Peers/Users
+; ============================================================================
+; Endpoints define individual SIP devices that can register and make calls
+
+; Example endpoint - Registration required
+[1001]
+; Endpoint type (always 'endpoint' for peer definitions)
+type=endpoint
+
+; Authentication type
+; Values: register|ip (default: register)
+; - register: Must register with username/password
+; - ip: Validate by source IP address (trunk mode)
+auth_type=register
+
+; Username for authentication
+username=1001
+
+; Password for authentication
+; Use strong passwords in production!
+secret=changeme
+
+; Context for incoming calls from this endpoint
+; Must match a context in extensions.conf
+context=internal
+
+; Profile this endpoint registers to
+; Must match a defined profile name
+profile=internal
+
+; Caller ID name
+callerid="John Doe" <1001>
+
+; Mailbox for message waiting indicator
+;mailbox=1001@default
+
+; Maximum simultaneous registrations
+; Overrides profile default
+; Range: 1-100
+max_contacts=2
+
+; Ring all devices except those in use
+; Overrides profile default
+; Values: yes|no
+ring_all_except_inuse=yes
+
+; Codec preferences for this endpoint
+; Overrides profile default
+; Example: "opus,g722,alaw,ulaw"
+;codecs=alaw,ulaw
+
+; NAT settings (endpoint-specific)
+; Force NAT mode for this endpoint
+; Values: yes|no|auto (default: auto)
+;nat=auto
+
+; Direct media for this endpoint
+; Values: yes|no (default: follows profile)
+;direct_media=no
+
+; DTMF mode for this endpoint
+; Values: rfc2833|info|inband (default: follows profile)
+;dtmf_mode=rfc2833
+
+; Call limit for this endpoint
+; Maximum simultaneous calls
+; Range: 1-100 (default: unlimited)
+;call_limit=2
+
+; Subscribe context for presence
+; Context for SUBSCRIBE requests
+;subscribe_context=internal
+
+; Trust Remote-Party-ID header
+; Values: yes|no (default: no)
+;trust_rpid=no
+
+; Send Remote-Party-ID header
+; Values: yes|no (default: no)
+;send_rpid=no
+
+; T.38 fax settings
+; Enable T.38 for this endpoint
+; Values: yes|no (default: follows profile)
+;t38_enabled=no
+
+; Allowed User-Agent patterns for this endpoint
+; Comma-separated list (max 3 patterns)
+; USERAGENT = placeholder captured on first registration
+;allowed_useragents=Zoiper,USERAGENT
+
+; ACL (Access Control List) for this endpoint
+; ACL name from acl.conf
+;acl=internal_only
+
+; Encryption settings
+; Media encryption mode
+; Values: no|sdes|dtls (default: no)
+;media_encryption=no
+
+; Require encrypted media
+; Values: yes|no (default: no)
+;media_encryption_required=no
+
+; Custom variables (passed to dialplan)
+;setvar=ACCOUNT_CODE=12345
+;setvar=CALL_LIMIT=2
+
+; Example endpoint with minimal configuration
+[1002]
+type=endpoint
+username=1002
+secret=changeme
+context=internal
+profile=internal
+
+; Example public endpoint
+[1003]
+type=endpoint
+username=1003
+secret=strongpassword
+context=public
+profile=public
+; More restrictive for public endpoints
+max_contacts=1
+; Specific User-Agent restriction
+allowed_useragents=Asterisk PBX
+; Require encryption
+;media_encryption=sdes
+;media_encryption_required=yes
+
+; ============================================================================
+; TRUNK EXAMPLES - IP-based Authentication
+; ============================================================================
+
+; Example trunk - No registration required
+[trunk-provider]
+type=endpoint
+
+; IP-based authentication
+auth_type=ip
+
+; Accept calls only from this IP address
+; This replaces the need for username/password
+host=203.0.113.50
+
+; Accept calls only from this port (optional)
+; Set to 0 or omit to accept from any port
+port=5060
+
+; Context for incoming calls from this trunk
+context=from-trunk
+
+; Profile to use
+profile=public
+
+; Optional: Also verify User-Agent
+; Useful for additional security
+allowed_useragents=ProviderPBX
+
+; Caller ID for outgoing calls through this trunk
+callerid="Company" <18005551234>
+
+; Codecs for this trunk
+codecs=alaw,ulaw
+
+; Another trunk example with any port
+[trunk-secondary]
+type=endpoint
+auth_type=ip
+host=198.51.100.25
+; port not specified = accept from any port
+context=from-trunk
+profile=public
+
+; ============================================================================
+; TEMPLATES - Reusable Configuration Templates
+; ============================================================================
+; Templates reduce repetition in configuration
+; Define with (!) suffix, use with (template-name)
+
+; Internal endpoint template
+[internal-endpoint](!)
+type=endpoint
+context=internal
+profile=internal
+max_contacts=3
+ring_all_except_inuse=yes
+codecs=opus,g722,alaw,ulaw
+nat=auto
+dtmf_mode=rfc2833
+
+; Public endpoint template
+[public-endpoint](!)
+type=endpoint
+context=public
+profile=public
+max_contacts=1
+ring_all_except_inuse=no
+codecs=alaw,ulaw
+nat=yes
+media_encryption=sdes
+
+; Example using template
+[2001](internal-endpoint)
+username=2001
+secret=password2001
+callerid="Alice" <2001>
+
+[2002](internal-endpoint)
+username=2002
+secret=password2002
+callerid="Bob" <2002>
+
+; ============================================================================
+; NOTES AND BEST PRACTICES
+; ============================================================================
+; 1. Always use strong passwords in production
+; 2. Enable blacklisting on public-facing profiles
+; 3. Use separate profiles for internal and external traffic
+; 4. Restrict User-Agents when possible to prevent scanning
+; 5. Enable encryption for sensitive communications
+; 6. Set appropriate expiry times based on your network
+; 7. Use templates to maintain consistency
+; 8. Monitor logs for security events
+; 9. Keep firmware/software of endpoints updated
+; 10. Use ACLs to restrict access where appropriate
+
+; ============================================================================
+; TROUBLESHOOTING
+; ============================================================================
+; Enable debugging:
+;   CLI> sip set debug on
+;   CLI> sip set debug off
+;
+; Show profiles:
+;   CLI> sip show profiles
+;
+; Show registrations:
+;   CLI> sip show registry
+;
+; Show peer details:
+;   CLI> sip show peer 1001
+;
+; Reload configuration:
+;   CLI> module reload chan_sofia.so
+;
+; Check blacklist:
+;   CLI> sip show blacklist
+
+; ============================================================================
+; CLI COMMANDS REFERENCE (Actual commands from source code)
+; ============================================================================
+; General Information Commands:
+;   sip show settings                     - Show global SIP settings
+;   sip show profiles                     - List all configured profiles
+;   sip show peers                        - Show all configured peers/endpoints
+;   sip show peer <peername>              - Show details of specific peer
+;   sip show peer contacts <peername>     - Show all contacts for a peer
+;
+; Registration and Subscription Commands:
+;   sip show registry                     - Show active registrations
+;   sip show subscriptions                - Show active event subscriptions
+;   sip show publications                 - Show active event publications
+;
+; Debugging Commands:
+;   sip set debug {on|off}                - Enable/disable SIP debugging
+;
+; Security Commands:
+;   sip show blacklist                    - Show IP blacklist
+;   sip blacklist add <IP> [duration]     - Add IP to blacklist (duration in seconds)
+;   sip blacklist del <IP>|all            - Remove IP from blacklist or clear all
+;   sip show authcache                    - Show authentication cache
+;   sip authcache clear                   - Clear authentication cache
+;
+; Module Management Commands:
+;   module reload chan_sofia.so           - Reload the module
+;   module unload chan_sofia.so           - Unload the module
+;   module load chan_sofia.so             - Load the module
+;
+; Standard Asterisk Commands (work with SIP channels):
+;   core show channels                    - Show all active channels
+;   core show channel SIP/xxxx            - Show specific SIP channel details
+;
+; Examples:
+;   sip show settings
+;   sip show peers
+;   sip show peer 1001
+;   sip show registry
+;   sip set debug on
+;   sip blacklist add 192.168.1.100 3600
+;   sip show blacklist
+;
+; Notes:
+; - Commands start with 'sip' not 'sofia'
+; - Use tab completion in CLI for available commands
+; - Some commands require specific parameters
+; - Duration values are in seconds

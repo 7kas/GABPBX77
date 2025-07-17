@@ -1,0 +1,10 @@
+[Unit]
+Description=GABpbx Manager Interface TLS Socket
+
+[Socket]
+Service=gabpbx.service
+ListenStream=0.0.0.0:5039
+
+[Install]
+WantedBy=sockets.target
+RequiredBy=gabpbx.service

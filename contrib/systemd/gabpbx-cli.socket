@@ -1,0 +1,13 @@
+[Unit]
+Description=GABpbx Command-line Interface Socket
+
+[Socket]
+Service=gabpbx.service
+ListenStream=/var/run/gabpbx/gabpbx.ctl
+SocketUser=gabpbx
+SocketGroup=gabpbx
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target
+RequiredBy=gabpbx.service

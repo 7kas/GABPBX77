@@ -1,0 +1,71 @@
+
+PBX: pbx1, ext 207
+ 
+La llamada entrante va sin problemas.
+ 
+En cuanto a la saliente, le pasa lo que al punto 2 del endpoints, se monta mal y aparece lo mismo en eli3
+
+
+GABPBX77
+
+[May 12 09:21:15] WARNING[184067][C-00000005] res_config_pgsql.c: Postgresql RealTime: Failed to update cached result
+[May 12 09:21:17] WARNING[184072] res_config_pgsql.c: Postgresql RealTime: Failed to update cached result
+[May 12 09:21:17] VERBOSE[184072] res_pjsip_registrar.c: Added contact 'sip:960550431@88.19.225.29:62241;ob;x-ast-orig-host=192.168.60.54:62241' to AOR '960550431' with expiration of 180 seconds
+[May 12 09:21:24] WARNING[184072] res_config_pgsql.c: Postgresql RealTime: Failed to update cached result
+[May 12 09:21:24] VERBOSE[184076] pbx_realtime.c: Executing [621003589@endpoints:1] NoOp("PJSIP/960550431-00000008", "nodial")
+[May 12 09:21:24] VERBOSE[184076] pbx_realtime.c: Executing [621003589@endpoints:2] ZoonsBilling("PJSIP/960550431-00000008", "621003589,60,S(7200)")
+[May 12 09:21:24] VERBOSE[184076][C-00000006] app_gabilling.c:     -- [960550431|621003589] Accountcode 1 cidnum 960550431 to dst 621003589
+[May 12 09:21:24] VERBOSE[184076] app_dial.c: [960550431→621003589@endpoints] Setting call duration limit to 7200.000 seconds.
+[May 12 09:21:24] VERBOSE[184076] app_stack.c: PJSIP/trunk_eli3-00000009 Internal Gosub(pjsip_billing_headers,1,1) start
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:1] NoOp("PJSIP/trunk_eli3-00000009", ""Hola Mundo"") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:2] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Root)=") in new stack
+[May 12 09:21:24] ERROR[184072] res_pjsip_header_funcs.c: No headers had been previously added to this session.
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:3] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Root)=tucall_Root: 0") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:4] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Accountcode)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:5] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Accountcode)=tucall_Accountcode: 1") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:6] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Context)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:7] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Context)=tucall_Context: endpoints") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:8] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Name)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:9] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Name)=tucall_Name: (null)") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:10] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Num)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:11] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Num)=tucall_Num: 960550431") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:12] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_CliBilling)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:13] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_CliBilling)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:14] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Provider)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:15] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Provider)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:16] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Backup)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:17] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Backup)=tucall_Backup: 0") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:18] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(remove,tucall_Privacy)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:19] Set("PJSIP/trunk_eli3-00000009", "PJSIP_HEADER(add,tucall_Privacy)=") in new stack
+[May 12 09:21:24] VERBOSE[184076] pbx.c: [621003589→1@pjsip_billing_headers] Executing [1@pjsip_billing_headers:20] Return("PJSIP/trunk_eli3-00000009", "") in new stack
+[May 12 09:21:24] VERBOSE[184076] app_stack.c: Spawn extension (default, 621003589, 1) exited non-zero on 'PJSIP/trunk_eli3-00000009'
+[May 12 09:21:24] VERBOSE[184076] app_stack.c: PJSIP/trunk_eli3-00000009 Internal Gosub(pjsip_billing_headers,1,1) complete GOSUB_RETVAL=
+[May 12 09:21:24] VERBOSE[184076] app_dial.c: [960550431→621003589@endpoints] Called PJSIP/9999#621003589@trunk_eli3
+[May 12 09:21:24] VERBOSE[184076] app_dial.c: [960550431→621003589@endpoints] Everyone is busy/congested at this time (1:1/0/0)
+[May 12 09:21:24] VERBOSE[184076] pbx_realtime.c: Executing [621003589@endpoints:3] GotoIf("PJSIP/960550431-00000008", "0?100")
+[May 12 09:21:24] VERBOSE[184076] pbx_realtime.c: Executing [621003589@endpoints:4] Set("PJSIP/960550431-00000008", "ZSBILLING_BACKUP=1")
+[May 12 09:21:24] VERBOSE[184076] pbx_realtime.c: Executing [621003589@endpoints:5] ZoonsBilling("PJSIP/960550431-00000008", "621003589,60,S(7200)")
+[May 12 09:21:24] VERBOSE[184076][C-00000006] app_gabilling.c:     -- [960550431|621003589] Accountcode 1 cidnum 960550431 to dst 621003589
+[May 12 09:21:24] VERBOSE[184076] app_dial.c: [960550431→621003589@endpoints] Setting call duration limit to 7200.000 seconds.
+
+
+ELI3
+
+May 12 09:47:07 eli3 /usr/sbin/kamailio[1910]: BF [sip:207@213.162.195.170;c6ee4d59-5ba0-405c-9d95-7d2f743928c3] tucall_Root: 0 tucall_Accountcode: 1 tucall_Context: pbx1 tucall_Name: (null) tucall_Backup: 0   -> sip:9999%23621003589@213.162.195.22 (<null> - <null>)
+
+May 12 09:47:07 eli3 /usr/sbin/kamailio[1902]: ERROR:db_postgres:db_postgres_store_result: driver error: PGRES_FATAL_ERROR, ERROR:  syntax error at or near ":"#012LINE 1: ...'213.162.195.170', '621003589', '207', tucall_Root: 0, 'tuca...#012
+
+
+POSTGRESQL 
+
+2025-05-12 09:21:24.519 CEST [3057674] ivoip@tucall ERROR:  syntax error at or near ":" at character 206
+2025-05-12 09:21:24.519 CEST [3057674] ivoip@tucall STATEMENT:  SELECT ruri1, fu FROM voip_billing_s('sip:960550431@213.162.195.170', '3ee344b4-616a-4ca9-bc0a-1237bc7d3aee', 'sip:9999%23621003589@213.162.195.22', '213.162.195.170', '621003589', '960550431', tucall_Root: 0, 'tucall_Accountcode: 1', 'tucall_Context: endpoints', 'tucall_Num: 960550431', 'tucall_Name: (null)', tucall_Backup: 0, '', '')
+2025-05-12 09:21:24.580 CEST [3057674] ivoip@tucall ERROR:  syntax error at or near ":" at character 206
+2025-05-12 09:21:24.580 CEST [3057674] ivoip@tucall STATEMENT:  SELECT ruri1, fu FROM voip_billing_s('sip:960550431@213.162.195.170', '5168e40a-5c3f-4273-ae3b-e2dd1c4d251c', 'sip:9999%23621003589@213.162.195.22', '213.162.195.170', '621003589', '960550431', tucall_Root: 0, 'tucall_Accountcode: 1', 'tucall_Context: endpoints', 'tucall_Num: 960550431', 'tucall_Name: (null)', tucall_Backup: 1, '', '')
+2025-05-12 09:21:24.649 CEST [3057674] ivoip@tucall ERROR:  syntax error at or near ":" at character 206
+2025-05-12 09:21:24.649 CEST [3057674] ivoip@tucall STATEMENT:  SELECT ruri1, fu FROM voip_billing_s('sip:960550431@213.162.195.170', 'f2856204-1474-423a-9afd-e22ec087ddc4', 'sip:9999%23621003589@213.162.195.22', '213.162.195.170', '621003589', '960550431', tucall_Root: 0, 'tucall_Accountcode: 1', 'tucall_Context: endpoints', 'tucall_Num: 960550431', 'tucall_Name: (null)', tucall_Backup: 2, '', '')
+2025-05-12 09:21:24.718 CEST [3040893] ivoip@tucall ERROR:  syntax error at or near ":" at character 206
+2025-05-12 09:21:24.718 CEST [3040893] ivoip@tucall STATEMENT:  SELECT ruri1, fu FROM voip_billing_s('sip:960550431@213.162.195.170', '54fd00e0-2899-42a4-94d0-b2f56656d6c6', 'sip:9999%23621003589@213.162.195.22', '213.162.195.170', '621003589', '960550431', tucall_Root: 0, 'tucall_Accountcode: 1', 'tucall_Context: endpoints', 'tucall_Num: 960550431', 'tucall_Name: (null)', tucall_Backup: 3, '', '')
+2025-05-12 09:21:24.784 CEST [3057674] ivoip@tucall ERROR:  syntax error at or near ":" at character 206
+2025-05-12 09:21:24.784 CEST [3057674] ivoip@tucall STATEMENT:  SELECT ruri1, fu FROM voip_billing_s('sip:960550431@213.162.195.170', 'd3c169d2-7fe9-4591-8040-58506b8f3366', 'sip:9999%23621003589@213.162.195.22', '213.162.195.170', '621003589', '960550431', tucall_Root: 0, 'tucall_Accountcode: 1', 'tucall_Context: endpoints', 'tucall_Num: 960550431', 'tucall_Name: (null)', tucall_Backup: 4, '', '')
+2

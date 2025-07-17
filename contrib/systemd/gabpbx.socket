@@ -1,0 +1,22 @@
+[Unit]
+Description=GABpbx Sockets
+
+[Socket]
+FreeBind=true
+SocketUser=gabpbx
+SocketGroup=gabpbx
+SocketMode=0660
+
+# CLI
+ListenStream=/var/run/gabpbx/gabpbx.ctl
+# AMI
+ListenStream=0.0.0.0:5038
+# AMIS
+ListenStream=0.0.0.0:5039
+# HTTP
+ListenStream=127.0.0.1:8088
+# HTTPS
+ListenStream=127.0.0.1:8089
+
+[Install]
+WantedBy=sockets.target
