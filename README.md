@@ -1,8 +1,8 @@
 # The GABpbx(R) Open Source PBX
 
 ```
-By Mark Spencer <markster@digium.com> and the GABpbx.org developer community.
-Copyright (C) 2001-2025 Sangoma Technologies Corporation and other copyright holders.
+By Germán Luis Aracil Boned <garacilb@gmail.com> and the GABpbx.org developer community.
+Copyright (C) 2001-2025 7kas servicios de internet SL and other copyright holders.
 ```
 
 ## SECURITY
