@@ -39,6 +39,7 @@
 #include "gabpbx/causes.h"
 #include "gabpbx/format_cap.h"
 #include "gabpbx/format_cache.h"
+#include "gabpbx/strings.h"
 #include "gabpbx/rtp_engine.h"
 #include "gabpbx/acl.h"
 #include "gabpbx/manager.h"
@@ -842,13 +843,33 @@ static void *sofia_worker(void *data)
 	return NULL;
 }
 
+/* Helper to count active channels for a peer */
+static int count_peer_channels(const char *peer_name)
+{
+       struct ast_channel_iterator *iter;
+       struct ast_channel *chan;
+       char prefix[256];
+       int count = 0;
+
+       snprintf(prefix, sizeof(prefix), "SIP/%s-", peer_name);
+       iter = ast_channel_iterator_by_name_new(prefix, strlen(prefix));
+       if (!iter) {
+               return 0;
+       }
+       for (; (chan = ast_channel_iterator_next(iter)); ast_channel_unref(chan)) {
+               count++;
+       }
+       ast_channel_iterator_destroy(iter);
+       return count;
+}
+
 /* Device state implementation for BLF */
 static int sofia_devicestate(const char *data)
 {
-	struct sip_endpoint *peer;
-	char *device, *profile_name;
-	struct sip_profile *profile = NULL;
-	int res = AST_DEVICE_INVALID;
+       struct sip_endpoint *peer;
+       char *device, *profile_name;
+       struct sip_profile *profile = NULL;
+       int res = AST_DEVICE_INVALID;
 	
 	device = ast_strdupa(data);
 	profile_name = strchr(device, '@');
@@ -875,15 +896,15 @@ static int sofia_devicestate(const char *data)
 		AST_RWLIST_UNLOCK(&profiles);
 	}
 	
-	if (peer) {
-		if (peer->registration_count > 0) {
-			/* Check actual device state from active calls */
-			res = AST_DEVICE_NOT_INUSE;  /* TODO: Check active channels */
-		} else {
-			res = AST_DEVICE_UNAVAILABLE;
-		}
-		ao2_ref(peer, -1);  /* Release reference from sip_endpoint_find */
-	}
+       if (peer) {
+               if (peer->registration_count > 0) {
+                       int active = count_peer_channels(peer->name);
+                       res = active > 0 ? AST_DEVICE_INUSE : AST_DEVICE_NOT_INUSE;
+               } else {
+                       res = AST_DEVICE_UNAVAILABLE;
+               }
+               ao2_ref(peer, -1);  /* Release reference from sip_endpoint_find */
+       }
 	
 	return res;
 }
@@ -1361,9 +1382,9 @@ static int sofia_indicate(struct ast_channel *ast, int condition, const void *da
 	}
 	
 	switch (condition) {
-	case AST_CONTROL_RINGING:
-		/* Send 180 Ringing - optionally with SDP for early media */
-		if (pvt->rtp && 0 /* TODO: check early media flag */) {
+       case AST_CONTROL_RINGING:
+               /* Send 180 Ringing - optionally with SDP for early media */
+               if (pvt->rtp) {
 			/* Get RTP address and port for early media */
 			ast_rtp_instance_get_local_address(pvt->rtp, &rtp_addr);
 			rtp_port = ast_sockaddr_port(&rtp_addr);
@@ -1480,38 +1501,58 @@ static int sofia_sendtext(struct ast_channel *ast, const char *text)
 
 static int sofia_senddigit_begin(struct ast_channel *ast, char digit)
 {
-	/* We don't support DTMF begin for INFO method */
-	/* DTMF via INFO is sent as complete digits in senddigit_end */
-	return 0;
-}
-
-static int sofia_senddigit_end(struct ast_channel *ast, char digit, unsigned int duration)
-{
 	struct sofia_pvt *pvt = ast_channel_tech_pvt(ast);
 	
-	if (!pvt || !pvt->nh) {
-		return -1;
-	}
-	
-	/* Check if we should use INFO for DTMF */
-	/* TODO: Add DTMF mode configuration (info, rfc2833, inband) */
-	/* For now, always use INFO if dialog is confirmed */
-	
-	if (pvt->dialog_state == DIALOG_STATE_CONFIRMED) {
-		/* Send DTMF via INFO */
-		return sofia_send_dtmf_info(pvt, digit, duration);
-	}
-	
-	/* Cannot send DTMF if dialog not confirmed */
+	if (!pvt || !pvt->endpoint) {
 	return -1;
-}
+	}
+	
+	if (!strcasecmp(pvt->endpoint->dtmfmode, "rfc2833") && pvt->rtp) {
+	return ast_rtp_instance_dtmf_begin(pvt->rtp, digit);
+	} else if (!strcasecmp(pvt->endpoint->dtmfmode, "inband")) {
+	struct ast_frame f = {
+	.frametype = AST_FRAME_DTMF_BEGIN,
+	.subclass.integer = digit,
+	};
+	ast_queue_frame(ast, &f);
+	return 0;
+	}
+	
+	/* INFO mode does not use begin packets */
+	return 0;
+	}
 
-/* CLI commands */
-static char *sofia_show_status(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
-static char *sofia_show_profiles(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
-
-static char *sofia_show_endpoints(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
-static char *sofia_show_peer(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
+	static int sofia_senddigit_end(struct ast_channel *ast, char digit, unsigned int duration)
+	{
+	struct sofia_pvt *pvt = ast_channel_tech_pvt(ast);
+	
+	if (!pvt || !pvt->endpoint) {
+	return -1;
+	}
+	
+	if (!strcasecmp(pvt->endpoint->dtmfmode, "rfc2833") && pvt->rtp) {
+	return ast_rtp_instance_dtmf_end_with_duration(pvt->rtp, digit, duration);
+	} else if (!strcasecmp(pvt->endpoint->dtmfmode, "inband")) {
+	struct ast_frame f = {
+	.frametype = AST_FRAME_DTMF_END,
+	.subclass.integer = digit,
+	.len = duration,
+	};
+	ast_queue_frame(ast, &f);
+	return 0;
+	} else if (pvt->nh && pvt->dialog_state == DIALOG_STATE_CONFIRMED) {
+	return sofia_send_dtmf_info(pvt, digit, duration);
+	}
+	
+	return -1;
+	}
+	
+	/* CLI commands */
+	static char *sofia_show_status(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
+	static char *sofia_show_profiles(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
+	
+	static char *sofia_show_endpoints(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
+	static char *sofia_show_peer(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 static char *sofia_show_peer_contacts(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 static char *sofia_show_registrations(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 static char *sofia_show_subscriptions(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
@@ -1765,9 +1806,12 @@ static char *sofia_show_peer(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		ast_cli(a->fd, "  * UA Auth    : Not required\n");
 	}
 	
-	ast_cli(a->fd, "\n");
-	ast_cli(a->fd, "  Codecs       : ");
-	ast_cli(a->fd, "(ulaw|alaw|gsm)\n"); /* TODO: Real codec list */
+ast_cli(a->fd, "\n");
+{
+struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
+const char *names = peer->caps ? ast_format_cap_get_names(peer->caps, &codec_buf) : "(none)";
+ast_cli(a->fd, "  Codecs       : %s\n", names);
+}
 	/* Display registration status summary */
 	int active_count = count_active_registrations(peer);
 	int total_count = 0;
@@ -2795,14 +2839,25 @@ static int registration_refresh_callback(const void *data)
 		return 0;
 	}
 	
-	remaining = reg->expires - now;
-	ast_log(LOG_NOTICE, "Sending registration refresh for %s (expires in %d seconds)\n", 
-		reg->aor, remaining);
-	
-	/* TODO: Actually send the REGISTER refresh here */
-	/* For now, just log that we would refresh */
-	ast_log(LOG_DEBUG, "REGISTER refresh would be sent here for %s to %s\n",
-		reg->aor, reg->contact);
+       remaining = reg->expires - now;
+       ast_log(LOG_NOTICE, "Sending registration refresh for %s (expires in %d seconds)\n",
+               reg->aor, remaining);
+
+       /* Send REGISTER refresh */
+       {
+               nua_handle_t *nh;
+
+               nh = nua_handle(profile->nua, NULL, TAG_END());
+               if (nh) {
+                       nua_register(nh,
+                               SIPTAG_TO_STR(reg->aor),
+                               SIPTAG_CONTACT_STR(reg->contact),
+                               TAG_END());
+                       nua_handle_destroy(nh);
+               } else {
+                       ast_log(LOG_WARNING, "Failed to create NUA handle for registration refresh of %s\n", reg->aor);
+               }
+       }
 	
 	/* Don't reschedule - we'll schedule a new refresh when we get the response */
 	reg->refresh_sched_id = -1;

@@ -127,12 +127,11 @@ static int validate_bye_request(sip_t const *sip, struct sofia_pvt *pvt)
 		return -1;
 	}
 	
-	/* Check dialog state - BYE only valid for confirmed dialogs */
-	if (pvt->dialog_state != DIALOG_STATE_CONFIRMED &&
-	    pvt->dialog_state != DIALOG_STATE_EARLY) {
-		ast_log(LOG_WARNING, "BYE: Invalid dialog state %d\n", pvt->dialog_state);
-		return -1;
-	}
+       /* Check dialog state - BYE only valid for confirmed dialogs */
+       if (pvt->dialog_state != DIALOG_STATE_CONFIRMED) {
+               ast_log(LOG_WARNING, "BYE: Invalid dialog state %d\n", pvt->dialog_state);
+               return -1;
+       }
 	
 	return 0;
 }

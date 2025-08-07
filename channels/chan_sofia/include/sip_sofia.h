@@ -13,6 +13,7 @@
 #include "gabpbx/linkedlists.h"
 #include "gabpbx/lock.h"
 #include "gabpbx/channel.h"
+#include "gabpbx/format_cap.h"
 
 /* Forward declarations to avoid Sofia-SIP dependency in headers */
 typedef struct su_root_s su_root_t;
@@ -147,9 +148,13 @@ struct sip_endpoint {
 	int num_useragents;              /* Number of configured User-Agent patterns */
 	unsigned int require_useragent:1; /* Require specific User-Agent for auth */
 	
-	/* Multiple registrations support */
-	int max_contacts;        /* Maximum simultaneous registrations (default: 1) */
-	int registration_count;   /* Current active registrations */
+       /* Multiple registrations support */
+       int max_contacts;        /* Maximum simultaneous registrations (default: 1) */
+       int registration_count;   /* Current active registrations */
+
+       /* Capabilities */
+       struct ast_format_cap *caps;
+       char dtmfmode[20];
 	
 	/* Authentication type */
 	enum {
