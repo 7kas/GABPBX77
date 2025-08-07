@@ -11,6 +11,8 @@
 #include "gabpbx/logger.h"
 #include "gabpbx/strings.h"
 #include "gabpbx/utils.h"
+#include "gabpbx/format_cap.h"
+#include "gabpbx/format_cache.h"
 
 #include "include/sip_sofia.h"
 #include "gabpbx/astobj2.h"
@@ -196,27 +198,42 @@ static void profile_destroy(struct sip_profile *profile)
 /* Destructor for endpoint objects */
 static void endpoint_destructor(void *obj)
 {
-	/* Nothing special to clean up for now */
+       struct sip_endpoint *endpoint = obj;
+
+       if (endpoint->caps) {
+               ao2_cleanup(endpoint->caps);
+       }
 }
 
 static struct sip_endpoint *endpoint_alloc(const char *name)
 {
-	struct sip_endpoint *endpoint;
-	
-	endpoint = ao2_alloc(sizeof(*endpoint), endpoint_destructor);
-	if (!endpoint) {
-		return NULL;
-	}
-	
-	ast_copy_string(endpoint->name, name, sizeof(endpoint->name));
-	strcpy(endpoint->context, "default");
-	endpoint->max_contacts = 0; /* 0 means use profile default */
-	endpoint->can_send_message = 1;
-	endpoint->send_options = 1;
-	endpoint->num_useragents = 0;
-	endpoint->require_useragent = 0;
-	
-	return endpoint;
+       struct sip_endpoint *endpoint;
+
+       endpoint = ao2_alloc(sizeof(*endpoint), endpoint_destructor);
+       if (!endpoint) {
+               return NULL;
+       }
+
+       ast_copy_string(endpoint->name, name, sizeof(endpoint->name));
+       strcpy(endpoint->context, "default");
+       endpoint->max_contacts = 0; /* 0 means use profile default */
+       endpoint->can_send_message = 1;
+       endpoint->send_options = 1;
+       endpoint->num_useragents = 0;
+       endpoint->require_useragent = 0;
+
+       endpoint->caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+       if (!endpoint->caps) {
+               ao2_cleanup(endpoint);
+               return NULL;
+       }
+       ast_format_cap_append(endpoint->caps, ast_format_ulaw, 0);
+       ast_format_cap_append(endpoint->caps, ast_format_alaw, 0);
+       ast_format_cap_append(endpoint->caps, ast_format_gsm, 0);
+       ast_format_cap_append(endpoint->caps, ast_format_g722, 0);
+       ast_copy_string(endpoint->dtmfmode, "info", sizeof(endpoint->dtmfmode));
+
+       return endpoint;
 }
 
 static void endpoint_destroy(struct sip_endpoint *endpoint)
@@ -519,10 +536,10 @@ static void parse_endpoint(struct ast_config *cfg, const char *cat)
 			endpoint->can_subscribe = ast_true(var->value);
 		} else if (!strcasecmp(var->name, "send_options")) {
 			endpoint->send_options = ast_true(var->value);
-		} else if (!strcasecmp(var->name, "require_useragent")) {
-			endpoint->require_useragent = ast_true(var->value);
-		} else if (!strcasecmp(var->name, "allowed_useragent") || 
-		           !strcasecmp(var->name, "allowed_useragents")) {
+               } else if (!strcasecmp(var->name, "require_useragent")) {
+                       endpoint->require_useragent = ast_true(var->value);
+               } else if (!strcasecmp(var->name, "allowed_useragent") ||
+                          !strcasecmp(var->name, "allowed_useragents")) {
 			/* Support comma-separated User-Agent patterns (up to 3 total) */
 			char *patterns = ast_strdupa(var->value);
 			char *pattern;
@@ -542,11 +559,13 @@ static void parse_endpoint(struct ast_config *cfg, const char *cat)
 			}
 			
 			if (pattern && *pattern) {
-				ast_log(LOG_WARNING, "Maximum 3 User-Agent patterns allowed - ignoring remaining patterns\n");
-			}
-		}
-		var = var->next;
-	}
+                               ast_log(LOG_WARNING, "Maximum 3 User-Agent patterns allowed - ignoring remaining patterns\n");
+                       }
+               } else if (!strcasecmp(var->name, "dtmfmode")) {
+                       ast_copy_string(endpoint->dtmfmode, var->value, sizeof(endpoint->dtmfmode));
+               }
+               var = var->next;
+       }
 	
 	if (!profile_name) {
 		ast_log(LOG_ERROR, "Endpoint '%s' missing profile\n", cat);
